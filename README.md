@@ -3,6 +3,33 @@
 Módulo simple (no una app Rails) que modela un portfolio de inversión y
 calcula qué acciones comprar/vender para alinearlo a una distribución
 objetivo.
+
+## Por qué esta es la versión de entrega final
+ 
+Este proyecto pasó por cinco rondas de revisión de código con Codex.
+Cerrar aquí, en vez de seguir iterando, es una decisión deliberada, no
+falta de tiempo:
+ 
+- **Las primeras tres rondas encontraron bugs de lógica de negocio
+  reales**: rebalanceos inestables por no trackear cash, estado
+  inconsistente en `update_price`, una afirmación falsa en un comentario
+  de test, y un bug genuino de redondeo que dejaba acciones sin vender.
+  Todos se corrigieron con evidencia (tests que reproducen cada caso).
+- **Las últimas dos rondas ya no encontraron bugs de lógica**: encontraron
+  variaciones del mismo límite matemático conocido de usar `Float` para
+  cálculos financieros exactos. Este límite tiene una solución conocida en
+  la industria (`BigDecimal`/`Rational` de punta a punta), pero adoptarla
+  es un cambio de arquitectura, no un fix — reescribir `Stock` y
+  `Portfolio` para no tocar `Float` en ningún punto, inputs incluidos.
+- **La decisión de ingeniería, documentada explícitamente en `SPEC.md`**,
+  fue absorber el ruido de punto flotante con un epsilon acotado (que sí
+  cubre el 100% de los casos realistas: precios y allocations con la
+  precisión con la que se manejan en la práctica) y aceptar, de forma
+  consciente, que una allocation con una precisión artificial de 10+
+  decimales queda fuera de esa garantía. Seguir iterando el epsilon no
+  elimina el límite, solo lo desplaza — es matemáticamente imposible
+  distinguir con certeza "ruido de Float" de "fracción genuina" usando
+  solo `Float` y comparaciones por epsilon.
  
 ## Cómo correrlo
  
@@ -145,3 +172,6 @@ postular, tal como exige el punto 6 del enunciado.
 Este ejercicio fue creado por mi autoría y fue verificada su consistencia con ayuda de Codex (OpenAI) para comprobar coherencia entre el SPEC fabricado y el código escrito.
 Para esclarecer lo antes mencionado y dar un mejor panorama del uso de agentes adjunto el historial completo de la conversación, según lo solicitado en el proceso de postulación.
 `/conversacion.txt`
+
+La conversación completa se puede ver de manera más comoda ingresando a la siguiente liga:
+["https://app.warp.dev/session/c5900de2-d8fb-47b1-b7bf-ab9fdbfd44c2"](https://app.warp.dev/session/c5900de2-d8fb-47b1-b7bf-ab9fdbfd44c2)
