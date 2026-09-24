@@ -75,3 +75,73 @@ hallazgos de mayor impacto:
 - **Tolerancia de allocation ajustada**: de un margen arbitrario (1.0001)
   a un epsilon real de punto flotante (1e-9), alineado con que `SPEC.md`
   exige que la suma no supere 100%.
+
+## Segunda ronda de revisión
+ 
+Una segunda pasada de revisión (también con Codex) encontró que un
+comentario propio afirmaba algo falso, y algunos huecos de validación
+reales:
+ 
+- **Corrección importante**: un comentario en los tests afirmaba que
+  `rebalance!` nunca podía dejar `cash` en negativo. Es falso — cada orden
+  redondea sus acciones hacia abajo de forma *independiente*, así que una
+  venta que redondea a 0 acciones no financia una compra que sí se
+  ejecuta. Se corrigió la afirmación y se agregó un test que reproduce el
+  caso concreto (acción cara que no se puede vender + acción barata que sí
+  se puede comprar). Sigue fuera de alcance validar fondos suficientes —
+  ahora esa decisión está documentada con el comportamiento real, no con
+  una suposición incorrecta.
+- **`update_price` con precio inválido** ya no deja un `Stock` a medio
+  crear en el portfolio (antes insertaba el holding y recién después
+  fallaba la validación del precio).
+- **`Stock` rechaza `Float::INFINITY`** como precio (antes pasaba la
+  validación por ser `Numeric` y positivo).
+- **`adjust_quantity` exige un delta entero**, consistente con que el
+  constructor ya prohibía cantidades fraccionarias.
+- **Se quitó el redondeo a centavos** del valor de cada orden: ese mismo
+  número se usa para mover `cash`, así que redondearlo podía "filtrar"
+  valor con precios no enteros.
+Se descartaron deliberadamente, por bajo impacto para este ejercicio:
+renombrar variables internas (`diff_value`, `shares`, `update_price`) y
+extraer clases `Order`/`Rebalancer` — quedan como mejoras identificadas
+pero no priorizadas.
+
+## Tercera ronda de revisión
+ 
+Una tercera revisión encontró un bug real de punto flotante: al convertir
+una diferencia en dinero a cantidad de acciones (`diff / price`), Ruby
+(como cualquier lenguaje con `Float` IEEE-754) puede dar un resultado como
+`14.999999999999998` en vez de `15.0` exacto. Como el cálculo usaba
+`.floor` directo, esto truncaba una venta "completa" dejando 1 acción sin
+vender — contradiciendo la garantía documentada de que un holding sin
+allocation se liquida por completo en una sola llamada.
+ 
+**Fix**: se redondea a 6 decimales (precisión de sobra para valores
+monetarios) antes de aplicar `floor`, lo que absorbe el ruido de punto
+flotante sin afectar el redondeo hacia abajo genuino (1.5 acciones sigue
+dando 1). Ver `Portfolio#shares_for` (privado) y los tests que reproducen
+los dos casos concretos que encontró la revisión.
+ 
+No se persigue precisión arbitraria (para eso se usaría `BigDecimal` o
+enteros en centavos) porque está fuera del alcance de este ejercicio;
+queda documentado como límite conocido para precios de magnitud extrema.
+
+## Cuarta ronda de revisión
+ 
+Encontró dos cosas: el caso adversarial de redondeo (ya descrito arriba,
+resuelto con el epsilon relativo) y una imprecisión de documentación —
+"un holding sin allocation se vende por completo" no aclaraba que esa
+venta sigue sujeta a `MIN_TRADE_VALUE` como cualquier otra operación (una
+posición de $0.50 no se vende "solo para llegar a cero"). Se corrigió la
+redacción en SPEC.md y en este README; el comportamiento del código ya
+era el correcto, no requirió cambios.
+ 
+Pendiente, y fuera del alcance de este código: adjuntar el historial de
+esta conversación (los cuatro rounds de revisión) al repositorio antes de
+postular, tal como exige el punto 6 del enunciado.
+
+## Sobre el uso de LLMs
+ 
+Este ejercicio fue creado por mi autoría y fue verificada su consistencia con ayuda de Codex (OpenAI) para comprobar coherencia entre el SPEC fabricado y el código escrito.
+Para esclarecer lo antes mencionado y dar un mejor panorama del uso de agentes adjunto el historial completo de la conversación, según lo solicitado en el proceso de postulación.
+`/conversacion.txt`

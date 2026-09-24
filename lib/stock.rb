@@ -19,6 +19,8 @@ class Stock
   end
 
   def adjust_quantity(delta_shares)
+    raise ArgumentError, "delta_shares debe ser un entero (recibido: #{delta_shares.inspect})" unless delta_shares.is_a?(Integer)
+ 
     new_quantity = quantity + delta_shares
     raise ArgumentError, "No se pueden vender más acciones de las que se poseen (#{symbol})" if new_quantity.negative?
  
@@ -37,7 +39,7 @@ class Stock
   end
  
   def validate_price!(price)
-    return if price.is_a?(Numeric) && price.positive?
+    return if price.is_a?(Numeric) && price.finite? && price.positive?
     raise ArgumentError, "price debe ser un número > 0 (recibido: #{price.inspect})"
   end
 end

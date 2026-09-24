@@ -18,8 +18,15 @@ class Portfolio
 
   def update_price(symbol, price)
     symbol = symbol.to_s.upcase.to_sym
-    stock = @holdings[symbol] ||= Stock.new(symbol: symbol)
-    stock.current_price(price)
+    existing = @holdings[symbol]
+ 
+    if existing
+      existing.current_price(price)
+    else
+      candidate = Stock.new(symbol: symbol)
+      candidate.current_price(price) # valida antes de insertarlo al portfolio
+      @holdings[symbol] = candidate
+    end
   end
 
   def set_allocation(symbol, target_weight)
@@ -56,14 +63,18 @@ class Portfolio
  
       next if diff_value.abs < self.class::MIN_TRADE_VALUE
  
-      shares = (diff_value.abs / price).floor
+      shares = shares_for(diff_value.abs, price)
       next if shares.zero? # la diferencia en plata no alcanza para 1 acción completa
  
       {
         symbol: symbol,
         action: diff_value.positive? ? :buy : :sell,
         shares: shares,
-        estimated_value: (shares * price).round(2)
+        # Importante: este valor no es solo "informativo" — rebalance! lo usa
+        # tal cual para mover @cash. Por eso NO se redondea a centavos: hacerlo
+        # desalinearía el cash contabilizado del valor real de mercado
+        # (Stock#market_value tampoco redondea).
+        estimated_value: shares * price
       }
     end
   end
@@ -83,6 +94,16 @@ class Portfolio
   end
 
   private
+
+  EPSILON_RELATIVE = 1e-9
+  EPSILON_ABSOLUTE_CAP = 1e-6
+ 
+  def shares_for(value, price)
+    ratio = value / price
+    epsilon = [ratio.abs * EPSILON_RELATIVE, EPSILON_ABSOLUTE_CAP].min
+    (ratio + epsilon).floor
+  end
+ 
   def validate_target_weight!(target_weight)
     return if (0..1).cover?(target_weight)
  
