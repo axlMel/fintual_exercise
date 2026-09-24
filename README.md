@@ -19,7 +19,7 @@ falta de tiempo:
   variaciones del mismo límite matemático conocido de usar `Float` para
   cálculos financieros exactos. Este límite tiene una solución conocida en
   la industria (`BigDecimal`/`Rational` de punta a punta), pero adoptarla
-  es un cambio de arquitectura, no un fix — reescribir `Stock` y
+  es un cambio de arquitectura, no un fix  reescribir `Stock` y
   `Portfolio` para no tocar `Float` en ningún punto, inputs incluidos.
 - **La decisión de ingeniería, documentada explícitamente en `SPEC.md`**,
   fue absorber el ruido de punto flotante con un epsilon acotado (que sí
@@ -27,7 +27,7 @@ falta de tiempo:
   precisión con la que se manejan en la práctica) y aceptar, de forma
   consciente, que una allocation con una precisión artificial de 10+
   decimales queda fuera de esa garantía. Seguir iterando el epsilon no
-  elimina el límite, solo lo desplaza — es matemáticamente imposible
+  elimina el límite, solo lo desplaza es matemáticamente imposible
   distinguir con certeza "ruido de Float" de "fracción genuina" usando
   solo `Float` y comparaciones por epsilon.
  
@@ -173,5 +173,5 @@ Este ejercicio fue creado por mi autoría y fue verificada su consistencia con a
 Para esclarecer lo antes mencionado y dar un mejor panorama del uso de agentes adjunto el historial completo de la conversación, según lo solicitado en el proceso de postulación.
 `/conversacion.txt`
 
-La conversación completa se puede ver de manera más comoda ingresando a la siguiente liga:
+La conversación completa se puede ver de manera más cómoda ingresando a la siguiente liga:
 ["https://app.warp.dev/session/c5900de2-d8fb-47b1-b7bf-ab9fdbfd44c2"](https://app.warp.dev/session/c5900de2-d8fb-47b1-b7bf-ab9fdbfd44c2)
